@@ -836,26 +836,24 @@ Das NewsServiceModel muss nun um einiges angepasst werden, das Ergebnis sieht da
     }
 
 Unter <http://localhost/tambo/index.php/news/> können wir nun sogar unsere Newsposts aus der Datenbank sehen! Bravo!
-
-
-
-## Noch nicht zu Markdown konvertiert ... work in progress ...
-
     
-    [h1]Einloggen[/h1]
+## Einloggen
     
-    [h2]Das User-Modul[/h2]
+### Das User-Modul
     
-    Wir legen erstmal ein neues Modul "User" an:
-    [code]$ mkdir app/modules/User
+Wir legen erstmal ein neues Modul "User" an:
+    
+    $ mkdir app/modules/User
     $ mkdir app/modules/User/config
     $ mkdir app/modules/User/impl
-    $ mkdir app/modules/User/models[/code]
     
-    Damit das Module auch richtig funktioniert, erzeugen wir die module.xml für das Modul:
-    [code]$ vim app/modules/User/config/module.xml[/code]
-    mit folgendem Inhalt
-    [code]<?xml version="1.0" encoding="UTF-8"?>
+Damit das Module auch richtig funktioniert, erzeugen wir die module.xml für das Modul:
+    
+    $ vim app/modules/User/config/module.xml
+    
+mit folgendem Inhalt
+    
+    <?xml version="1.0" encoding="UTF-8"?>
     <ae:configurations xmlns="http://agavi.org/agavi/config/parts/module/1.0" xmlns:ae="http://agavi.org/agavi/config/global/envelope/1.0">
         <ae:configuration>
             <module enabled="true">
@@ -871,17 +869,20 @@ Unter <http://localhost/tambo/index.php/news/> können wir nun sogar unsere News
                 </settings>
             </module>
         </ae:configuration>
-    </ae:configurations>[/code]
+    </ae:configurations>
     
-    [h2]UsersModel[/h2]
+### UserServiceModel
     
-    Bevor wir jegliches Login machen können, brauchen wir etwas was das Login validiert. Deswegen bauen wir analog zum News Model nun auch ein UsersModel.
+Bevor wir jegliches Login machen können, brauchen wir etwas was das Login validiert. Deswegen bauen wir analog zum NewsServiceModel nun auch ein UserServiceModel.
+
+Dafür erzeugen wir eine neue Datei UserServiceModel.class.php:
+
+    $ vim app/models/UserServiceModel.class.php
     
-    Dafür erzeugen wir eine neue Datei UsersModel.class.php:
-    [code]$ vim app/modules/User/models/UsersModel.class.php[/code]
-    mit folgendem Inhalt:
-    [code]<?php
-    class User_UsersModel extends ProjectBaseModel implements AgaviISingletonModel {
+mit folgendem Inhalt:
+
+    <?php
+    class UserServiceModel {
     
         private $user_mock_data = array(
             1 => array(
@@ -920,22 +921,26 @@ Unter <http://localhost/tambo/index.php/news/> können wir nun sogar unsere News
             return $user;
         }
     
-    }[/code]
+    }
     
-    [h2]Der Userbar-Slot[/h2]
+### Der Userbar-Slot
     
-    Für den User soll oben eine Leiste angezeigt werden, wo er sich entweder einloggen kann, oder sieht, dass er eingeloggt ist.
+Für den User soll oben eine Leiste angezeigt werden, wo er sich entweder einloggen kann, oder sieht, dass er eingeloggt ist.
+
+Diese Userbar wird in Agavi idealerweise als Slot realisiert. Da ein Slot nur der Aufruf einer Action ist, registrieren wir unsere neue Action im User-Modul mit dem Namen UserbarAction.class.php
+
+Dafür legen wir das Action-Verzeichnis an
+
+    $ mkdir app/modules/User/impl/UserBar
+    $ cd app/modules/User/impl/UserBar
     
-    Diese Userbar wird in Agavi idealerweise als Slot realisiert. Da ein Slot nur der Aufruf einer Action ist, registrieren wir unsere neue Action im User-Modul mit dem Namen UserbarAction.class.php
+Nun kommt die Logik für die Action in
+
+    $ vim UserBarAction.class.php
+
+ist diese:
     
-    Dafür legen wir das Action-Verzeichnis an
-    [code]$ mkdir app/modules/User/impl/UserBar
-    $ cd app/modules/User/impl/UserBar[/code]
-    
-    Nun kommt die Logik für die Action in
-    [code]$ vim UserBarAction.class.php[/code]
-    ist diese:
-    [code]<?php
+    <?php
     class User_UserBarAction extends ProjectBaseAction {
     
         function execute(AgaviRequestDataHolder $rd) {
@@ -960,14 +965,17 @@ Unter <http://localhost/tambo/index.php/news/> können wir nun sogar unsere News
             return "Login";
         }
     
-    }[/code]
+    }
     
-    Von der Action wird entweder die LoggedIn oder die Login-View zurückgegeben.
+Von der Action wird entweder die LoggedIn oder die Login-View zurückgegeben.
     
-    Die LoggedIn-View unter UserBarLoggedInView.class.php
-    [code]vim UserBarLoggedInView.class.php[/code]
-    ist die folgende:
-    [code]<?php
+Die LoggedIn-View unter UserBarLoggedInView.class.php
+
+    vim UserBarLoggedInView.class.php[/code]
+
+ist die folgende:
+
+    <?php
     
     class User_UserBar_UserBarLoggedInView extends ProjectBaseView {
     
@@ -975,12 +983,15 @@ Unter <http://localhost/tambo/index.php/news/> können wir nun sogar unsere News
             $this->setupHtml($rd);
         }
     
-    }[/code]
+    }
     
-    Die Login-View
-    [code]$ vim UserBarLoginView.class.php[/code]
+Die Login-View
+
+    $ vim UserBarLoginView.class.php
+
     sieht analog dazu, so aus:
-    [code]<?php
+
+    <?php
     
     class User_UserBar_UserBarLoginView extends ProjectBaseView {
     
@@ -988,12 +999,15 @@ Unter <http://localhost/tambo/index.php/news/> können wir nun sogar unsere News
             $this->setupHtml($rd);
         }
     
-    }[/code]
+    }
     
-    Interessant wird es erst wieder im Template. Das Login-Template
-    [code]$ vim UserBarLogin.php[/code]
-    sieht wie folgt aus:
-    [code]<form method="post" action="<?php echo $t['login_url']; ?>">
+Interessant wird es erst wieder im Template. Das Login-Template
+
+    $ vim UserBarLogin.php
+
+sieht wie folgt aus:
+
+    <form method="post" action="<?php echo $t['login_url']; ?>">
         Hallo Gast. Bitte logge Dich ein.
         <label for="login-email">
             Email:
@@ -1005,36 +1019,46 @@ Unter <http://localhost/tambo/index.php/news/> können wir nun sogar unsere News
         <input name="login-password" type="password" value=""/>
     
         <input type="submit" value="Einloggen" />
-    </form>[/code]
+    </form>
     
-    Das LoggedIn-Template
-    [code]vim UserBarLoggedIn.php[/code]
-    sieht dann so aus:
-    [code]<?php
+Das LoggedIn-Template
+    
+    vim UserBarLoggedIn.php
+
+sieht dann so aus:
+
+    <?php
         $user_info = $t['user_info'];
     ?>
-    Hallo <?php echo htmlspecialchars($user_info['name']); ?>. <a href="<?php echo $t['logout_url']; ?>">Ausloggen</a>?[/code]
+    Hallo <?php echo htmlspecialchars($user_info['name']); ?>. <a href="<?php echo $t['logout_url']; ?>">Ausloggen</a>?
     
-    Nun haben wir zwar eine schöne Action, aber sie wird nie aufgerufen und auch nicht angezeigt. Der Weg geht nun aber nicht über die routing.xml, sondern über die output_types.xml!
+Nun haben wir zwar eine schöne Action, aber sie wird nie aufgerufen und auch nicht angezeigt. Der Weg geht nun aber nicht über die routing.xml, sondern über die output_types.xml!
     
-    Wir gehen zurück in das root-Verzeichnis.
-    [code]$ cd ../../../../../[/code]
+Wir gehen zurück in das root-Verzeichnis.
+
+    $ cd ../../../../../
     
-    Und passen die output_types.xml an
-    [code]$ vim app/config/output_types.xml[/code]
+Und passen die output_types.xml an
+
+    $ vim app/config/output_types.xml
     
-    Der Bereich layouts-standard enthält ein layer mit dem Namen "decorator", dort fügen wir folgendes ein:
-    [code]<slot name="user_bar" module="User" action="UserBar" />[/code]
+Der Bereich layouts-standard enthält ein layer mit dem Namen "decorator", dort fügen wir folgendes ein:
+
+    <slot name="user_bar" module="User" action="UserBar" />
     
-    Damit der Slot auch im Master-Template angezeigt wird, fügen wir kurz nach dem <body> in app/templates/Master.php
-    [code]$ vim app/templates/Master.php[/code]
-    die folgenden Zeilen ein:
-    [code]    <div>
+Damit der Slot auch im Master-Template angezeigt wird, fügen wir kurz nach dem <body> in app/templates/Master.php
+
+    $ vim app/templates/Master.php
+
+die folgenden Zeilen ein:
+
+        <div>
             <?php echo $slots['user_bar']; ?>
         </div>
-    [/code]
     
-    Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir oben immer den Balken, dass wir uns doch bitte einloggen möchten.
+Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir oben immer den Balken, dass wir uns doch bitte einloggen möchten.
+
+## Noch nicht zu Markdown konvertiert ... work in progress ...
     
     [h2]Die Login/Logout-Seite[/h2]
     
