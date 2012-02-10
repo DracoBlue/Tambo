@@ -2,6 +2,8 @@
 
 Willkommen zu Tambo. Tambo ist ein Tutorial, was Dir nach und nach beibringt, wie Du mit Agavi eine neue Anwendung bauen kannst.
 
+Dieses Dokument ist copyright by DracoBlue <http://dracoblue.net> 2010-2012.
+
 ## Das neue Agavi Projekt
 
 Ein neues Agavi Projekt anlegen, ist sehr einfach.
