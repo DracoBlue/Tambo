@@ -330,9 +330,9 @@ wir erweitern sie so, dass sie wie folgt aussieht:
     class News_ListNewsAction extends ProjectBaseAction {
     
         function execute(AgaviRequestDataHolder $rd) {
-            $news_model = $this->getContext()->getModel('NewsService');
+            $news_service = $this->getContext()->getModel('NewsService');
     
-            $this->setAttribute('news_posts', $news_model->getNews(0, 10));
+            $this->setAttribute('news_posts', $news_service->getNews(0, 10));
             return "Success";
         }
     
@@ -384,7 +384,7 @@ Wir erweitern die routing.xml, so dass sie danach so aussieht:
             <routes>
                 <route name="news" pattern="^/news$" module="News">
                     <route name=".list" pattern="^$" action="ListNews" />
-                    [strong]<route name=".item" pattern="^view/(news_item:\d+)$" action="ViewNewsItem" />[/strong]
+                    <route name=".item" pattern="^view/(news_item:\d+)$" action="ViewNewsItem" />
                 </route>
             </routes>
         </ae:configuration>
@@ -441,10 +441,10 @@ mit folgendem Inhalt:
     class News_ViewNewsItemAction extends ProjectBaseAction {
     
         function execute(AgaviRequestDataHolder $rd) {
-            $news_model = $this->getContext()->getModel('NewService');
+            $news_service = $this->getContext()->getModel('NewService');
     
             try {
-                $this->setAttribute('news_item', $news_model->getNewsItem($rd->getParameter('news_item')));
+                $this->setAttribute('news_item', $news_service->getNewsItem($rd->getParameter('news_item')));
             } catch (Exception $e) {
                return array('Default', 'Error404Success');
             }
@@ -514,7 +514,7 @@ und erweitern den Inhalt wie folgt:
             $results = array();
     
             foreach ($this->news_mock_data as $result) {
-                $result['url'] = $this->getContext()->getRouting()->gen(
+                $result['url'] = AgaviContext::getInstance()->getRouting()->gen(
                     'news.item',
                     array(
                         'news_item' => $result['id']
@@ -532,7 +532,7 @@ und erweitern den Inhalt wie folgt:
             }
     
             $result = $this->news_mock_data[$id];
-            $result['url'] = $this->getContext()->getRouting()->gen('news.item', array('news_item' => $result['id']));
+            $result['url'] = AgaviContext::getInstance()->getRouting()->gen('news.item', array('news_item' => $result['id']));
     
             return $result;
         }
@@ -557,7 +557,7 @@ wie folgt anpassen
         foreach ($t['news_posts'] as $news_post) {
     ?>
         <li>
-            <h2>[strong]<a href="<?php echo $news_post['url']; ?>">[/strong]<?php echo htmlspecialchars($news_post['title']); ?>[strong]</a>[/strong]</h2>
+            <h2><a href="<?php echo $news_post['url']; ?>"><?php echo htmlspecialchars($news_post['title']); ?></a></h2>
             <div><?php echo htmlspecialchars($news_post['body']); ?></div>
         </li>
     <?php
@@ -583,7 +583,7 @@ Standardgemäß ist die Datenbank bei Agavi deaktiviert. Deswegen müssen wir si
     $ vim app/config/settings.xml
 
 aktivieren:
-            <setting name="use_database">[strong]true[/strong]</setting>
+            <setting name="use_database">true</setting>
 
 ### Doctrine installieren/einrichten
 
@@ -649,7 +649,7 @@ und wir ersetzen den Inhalt hiermit:
     <ae:configurations xmlns="http://agavi.org/agavi/config/parts/autoload/1.0" xmlns:ae="http://agavi.org/agavi/config/global/envelope/1.0" parent="%core.system_config_dir%/autoload.xml">
         <ae:configuration>
     
-            [strong]<autoload name="Doctrine">%core.app_dir%/../libs/doctrine/Doctrine.php</autoload>[/strong]
+            <autoload name="Doctrine">%core.app_dir%/../libs/doctrine/Doctrine.php</autoload>
     
             <autoload name="ProjectBaseAction">%core.lib_dir%/action/ProjectBaseAction.class.php</autoload>
             <autoload name="ProjectBaseModel">%core.lib_dir%/model/ProjectBaseModel.class.php</autoload>
@@ -795,7 +795,7 @@ Das NewsServiceModel muss nun um einiges angepasst werden, das Ergebnis sieht da
                 'id' => $news_item->id,
                 'title' => $news_item->title,
                 'body' => $news_item->body,
-                'url' => $this->getContext()->getRouting()->gen(
+                'url' => AgaviContext::getInstance()->getRouting()->gen(
                     'news.item',
                     array(
                         'news_item' => $news_item->id
@@ -973,7 +973,7 @@ Von der Action wird entweder die LoggedIn oder die Login-View zurückgegeben.
     
 Die LoggedIn-View unter UserBarLoggedInView.class.php
 
-    vim UserBarLoggedInView.class.php[/code]
+    vim UserBarLoggedInView.class.php
 
 ist die folgende:
 
@@ -1060,29 +1060,33 @@ die folgenden Zeilen ein:
     
 Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir oben immer den Balken, dass wir uns doch bitte einloggen möchten.
 
-## Noch nicht zu Markdown konvertiert ... work in progress ...
+### Die Login/Logout-Seite
     
-    [h2]Die Login/Logout-Seite[/h2]
+Wir brauchen zusätzlich noch eine Login-Action.
     
-    Wir brauchen zusätzlich noch eine Login-Action.
+Dazu gehen wir nochmal in das User-Modul und legen einen Ordner für die neue Action an.
+
+    $ mkdir app/modules/User/impl/Login
+    $ cd app/modules/User/impl/Login
     
-    Dazu gehen wir nochmal in das User-Modul und legen einen Ordner für die neue Action an.
-    [code]$ mkdir app/modules/User/impl/Login
-    $ cd app/modules/User/impl/Login[/code]
-    
-    Eine neue route zum Login-Formular und der Logout-Seite wird in der routing.xml angelegt
-    [code]$ vim ../../../../config/routing.xml[/code]
+Eine neue route zum Login-Formular und der Logout-Seite wird in der routing.xml angelegt
+
+    $ vim ../../../../config/routing.xml
+
     in dem folgender Inhalt vor das letzte </routes> eingefügt wird:
-    [code]            <route name="user" pattern="^/user/" module="User">
-                    <route name=".login" pattern="^login/$" action="Login" />
-                    <route name=".logout" pattern="^logout/$" action="Logout" />
-                </route>
-    [/code]
+
+    <route name="user" pattern="^/user/" module="User">
+        <route name=".login" pattern="^login/$" action="Login" />
+        <route name=".logout" pattern="^logout/$" action="Logout" />
+    </route>
     
-    Wir definieren nun die LoginAction
-    [code]$ vim LoginAction.class.php[/code]
-    mit dem Inhalt:
-    [code]<?php
+Wir definieren nun die LoginAction
+
+    $ vim LoginAction.class.php
+
+mit dem Inhalt:
+
+    <?php
     class User_LoginAction extends ProjectBaseAction {
     
         function executeRead(AgaviRequestDataHolder $rd) {
@@ -1100,11 +1104,11 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
     
             $session = $this->getContext()->getUser();
     
-            $users_model = $this->getContext()->getModel('Users', 'User');
+            $user_service = $this->getContext()->getModel('UserService');
     
             $user = null;
             try {
-                $user = $users_model->getUserByEmailAndPassword($login_email, $login_password);
+                $user = $user_service->getUserByEmailAndPassword($login_email, $login_password);
             } catch (Exception $e) {
                 $this->setAttribute('error_message', $e->getMessage());
                 return 'Input';
@@ -1118,14 +1122,17 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
             return "Success";
         }
     
-    }[/code]
+    }
     
-    Damit sowohl Email als auch das Passwort bis zur Action durchkommen, müssen sie validiert werden.
+Damit sowohl Email als auch das Passwort bis zur Action durchkommen, müssen sie validiert werden.
     
-    Dafür brauchen wir die Login.xml
-    [code]$ vim Login.xml[/code]
-    welche dann so aussieht:
-    [code]<?xml version="1.0" encoding="UTF-8"?>
+Dafür brauchen wir die Login.xml
+
+    $ vim Login.xml
+
+welche dann so aussieht:
+
+    <?xml version="1.0" encoding="UTF-8"?>
     <ae:configurations xmlns="http://agavi.org/agavi/config/parts/validators/1.0" xmlns:ae="http://agavi.org/agavi/config/global/envelope/1.0" parent="%core.config_dir%/validators.xml" >
         <ae:configuration>
             <validators>
@@ -1137,14 +1144,17 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
                 </validator>
             </validators>
         </ae:configuration>
-    </ae:configurations>[/code]
+    </ae:configurations>
     
-    Da wir im Fehlerfall beim Login nur die Fehlermeldung anzeigen wollen, geben wir diese auch nur aus. Das Login ist ja bereits in UserBar implementiert.
+Da wir im Fehlerfall beim Login nur die Fehlermeldung anzeigen wollen, geben wir diese auch nur aus. Das Login ist ja bereits in UserBar implementiert.
     
-    Die
-    [code]$ vim LoginInput.php[/code]
-    sieht also so aus
-    [code]<?php
+Die
+
+    $ vim LoginInput.php
+
+sieht also so aus
+
+    <?php
         if (isset($t['error_message'])) {
     ?>
     <div>
@@ -1152,12 +1162,15 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
     </div>
     <?php
         }
-    ?>[/code]
+    ?>
     
-    Der LoginInputView ist wie alle anderen nicht sehr überraschend
-    [code]$ vim LoginInputView.class.php[/code]
-    mit folgendem Inhalt
-    [code]<?php
+Der LoginInputView ist wie alle anderen nicht sehr überraschend
+
+    $ vim LoginInputView.class.php
+
+mit folgendem Inhalt
+
+    <?php
     
     class User_Login_LoginInputView extends ProjectBaseView {
     
@@ -1165,12 +1178,15 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
             $this->setupHtml($rd);
         }
     
-    }[/code]
+    }
     
-    Dagegen wird [strong]keine[/strong] LoginSuccess.php angelegt, sondern [strong]nur[/strong] ein
-    [code]$ vim LoginSuccessView.class.php[/code]
-    mit diesem Inhalt:
-    [code]<?php
+Dagegen wird keine LoginSuccess.php angelegt, sondern nur ein
+
+    $ vim LoginSuccessView.class.php
+
+mit diesem Inhalt:
+
+    <?php
     
     class User_Login_LoginSuccessView extends ProjectBaseView {
     
@@ -1178,19 +1194,22 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
             $this->getResponse()->setRedirect($this->getContext()->getRouting()->gen('news.list'));
         }
     
-    }[/code]
+    }
     
-    [h2]Das Logout[/h2]
+### Das Logout
     
-    Erstmal legen wir nun noch die Logout-Action an.
-    [code]$ cd ..
-    $ mkdir Logout
-    $ cd Logout[/code]
+Erstmal legen wir nun noch die Logout-Action an.
+
+    $ mkdir app/modules/User/impl/Logout
+    $ cd app/modules/User/impl/Logout
     
-    Die Logout-Action tut nicht viel besonderes, außer den User ausloggen.
-    [code]$ vim LogoutAction.class.php[/code]
-    mit dem folgenden Code:
-    [code]<?php
+Die Logout-Action tut nicht viel besonderes, außer den User ausloggen.
+
+    $ vim LogoutAction.class.php
+
+mit dem folgenden Code:
+
+    <?php
     class User_LogoutAction extends ProjectBaseAction {
     
         function executeRead(AgaviRequestDataHolder $rd) {
@@ -1201,12 +1220,15 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
             return "Success";
         }
     
-    }[/code]
+    }
     
-    Und dann macht
-    [code]$ vim LogoutSuccessView.class.php[/code]
-    auch wieder nur einen Redirect:
-    [code]<?php
+Und dann macht
+
+    $ vim LogoutSuccessView.class.php
+
+auch wieder nur einen Redirect:
+
+    <?php
     
     class User_Logout_LogoutSuccessView extends ProjectBaseView {
     
@@ -1214,24 +1236,25 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
             $this->getResponse()->setRedirect($this->getContext()->getRouting()->gen('news.list'));
         }
     
-    }[/code]
+    }
     
-    [h2]Das Login/Logout ausprobieren![/h2]
+### Das Login/Logout ausprobieren!
     
-    Nun können wir uns wahlweise mit der Email jans@dracoblue.de und dem Passwort 1234 einloggen und danach wieder ausloggen. Unabhängig ob wir auf die Detailseite der News oder die News-Liste anschauen, der Status bleibt erhalten!
+Nun können wir uns wahlweise mit der Email jans@dracoblue.de und dem Passwort 1234 einloggen und danach wieder ausloggen. Unabhängig ob wir auf die Detailseite der News oder die News-Liste anschauen, der Status bleibt erhalten!
     
+## UserServiceModel-Daten aus der Datenbank
     
+Auch die User sollen selbstverständlich aus der Datenbank kommen. Deswegen holen wir diese wie die News per Doctrine aus einer Mysql Datenbank.
     
-    [h1]UsersModel-Daten aus der Datenbank[/h1]
+### Schema anpassen
     
-    Auch die User sollen selbstverständlich aus der Datenbank kommen. Deswegen holen wir diese wie die News per Doctrine aus einer Mysql Datenbank.
-    
-    [h2]Schema anpassen[/h2]
-    
-    Am Anfang passen wir die schema.yml an
-    [code]$ vim dev/schema/schema.yml[/code]
-    und fügen folgenden Inhalt ganz an das Ende:
-    [code]User:
+Am Anfang passen wir die schema.yml an
+
+    $ vim dev/schema/schema.yml
+
+und fügen folgenden Inhalt ganz an das Ende:
+
+    User:
       tableName: users
       columns:
         id:
@@ -1244,22 +1267,28 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
         password:
           type: string(255)
         first_name:
-          type: string(255)[/code]
+          type: string(255)
     
-    Nun generieren wir die ORM-Models:
-    [code]$ ./doctrine generate-models-yaml
-    generate-models-yaml - Generated models successfully from YAML schema[/code]
-    und erzeugen die Datenbanktabellen:
-    [code]./doctrine create-tables
-    create-tables - Created tables successfully[/code]
+Nun generieren wir die ORM-Models:
+
+    $ ./doctrine generate-models-yaml
+    generate-models-yaml - Generated models successfully from YAML schema
+
+und erzeugen die Datenbanktabellen:
+
+    ./doctrine create-tables
+    create-tables - Created tables successfully
     
-    [h2]Testdaten anlegen[/h2]
+### Testdaten anlegen
     
-    Da wir initial auch bei den Usern ein paar Testdaten (sogenannte Fixtures) haben wollen, legen wir eine users.yml im fixtures Ordner an:
-    [code]$ mkdir dev/fixtures
-    $ vim dev/fixtures/users.yml[/code]
-    mit folgendem Inhalt
-    [code]User:
+Da wir initial auch bei den Usern ein paar Testdaten (sogenannte Fixtures) haben wollen, legen wir eine users.yml im fixtures Ordner an:
+
+    $ mkdir dev/fixtures
+    $ vim dev/fixtures/users.yml
+
+mit folgendem Inhalt
+
+    User:
       DracoBlue:
         id: 1
         email: JanS@DracoBlue.de
@@ -1269,17 +1298,19 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
         id: 2
         email: kontakt@webdevberlin.com
         first_name: Jan
-        password: 23[/code]
+        password: 23
         
-    Danach laden wir die Daten wieder in die Datenbank:
-    [code]$ ./doctrine load-data
-    load-data - Data was successfully loaded[/code]
+Danach laden wir die Daten wieder in die Datenbank:
+
+    $ ./doctrine load-data
+    load-data - Data was successfully loaded
     
-    [h2]Das UsersModel dynamisieren[/h2]
+### Das UserServiceModel dynamisieren
     
-    Das UsersModel muss nun um einiges angepasst werden, das Ergebnis sieht dann so aus:
-    [code]<?php
-    class User_UsersModel extends ProjectBaseModel implements AgaviISingletonModel {
+Das UserServiceModel muss nun um einiges angepasst werden, das Ergebnis sieht dann so aus:
+
+    <?php
+    class UserServiceModel {
     
         public function getUserAsArray($user) {
             return array(
@@ -1319,26 +1350,29 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
             return $this->getUserAsArray($user);
         }
     
-    }[/code]
+    }
     
-    Unter http://localhost/tambo/index.php/news/ können wir uns nun sogar mit den Daten aus der Datenbank einloggen.
+Unter <http://localhost/tambo/index.php/news/> können wir uns nun sogar mit den Daten aus der Datenbank einloggen.
     
-    Das Passwort ist noch nicht verschlüsselt! Unbedingt nicht so unverschlüsselt im Livebetrieb machen!
+Das Passwort ist noch nicht verschlüsselt! Unbedingt nicht so unverschlüsselt im Livebetrieb machen!    
     
+## Kommentare zu den News
     
-    [h1]Kommentare zu den News[/h1]
+### Das Extras-Module
     
-    [h2]Das Extras-Module[/h2]
-    
-    Bevor wir beginnen können, müssen wollen wir ein neues Module anlegen. Da wir auf lange Sicht neben Kommentaren auch noch Tags und andere kleine wiederverwendbare Teile realisieren wollen, legen wir uns diesmal ein Modul mit dem Namen "Extras" an:
-    [code]$ mkdir app/modules/Extras
+Bevor wir beginnen können, müssen wollen wir ein neues Module anlegen. Da wir auf lange Sicht neben Kommentaren auch noch Tags und andere kleine wiederverwendbare Teile realisieren wollen, legen wir uns diesmal ein Modul mit dem Namen "Extras" an:
+
+    $ mkdir app/modules/Extras
     $ mkdir app/modules/Extras/config
-    $ mkdir app/modules/Extras/models
-    $ mkdir app/modules/Extras/impl[/code]
-    und füllen auch gleich wieder die config.xml
-    [code]$ vim app/modules/Extras/config.module.xml[/code]
-    mit folgendem Inhalt aus:
-    [code]<?xml version="1.0" encoding="UTF-8"?>
+    $ mkdir app/modules/Extras/impl
+
+und füllen auch gleich wieder die config.xml
+
+    $ vim app/modules/Extras/config.module.xml
+
+mit folgendem Inhalt aus:
+
+    <?xml version="1.0" encoding="UTF-8"?>
     <ae:configurations xmlns="http://agavi.org/agavi/config/parts/module/1.0" xmlns:ae="http://agavi.org/agavi/config/global/envelope/1.0">
         <ae:configuration>
             <module enabled="true">
@@ -1354,17 +1388,20 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
                 </settings>
             </module>
         </ae:configuration>
-    </ae:configurations>[/code]
+    </ae:configurations>
     
-    [h2]Das CommentsModel[/h2]
+### Der CommentService
     
-    Da wir das CommentsModel für viele Arten von Kommentaren verwenden wollen, werden wir es etwas generisch gestalten. Auf den ersten Blick mag das vielleicht etwas kompliziert aussehen, aber schon bald wirst Du merken, dass wir uns dadurch viel Schreibarbeit sparen.
+Da wir das CommentServiceModel für viele Arten von Kommentaren verwenden wollen, werden wir es etwas generisch gestalten. Auf den ersten Blick mag das vielleicht etwas kompliziert aussehen, aber schon bald wirst Du merken, dass wir uns dadurch viel Schreibarbeit sparen.
     
-    Wir legen nun erstmal das CommentsModel.class.php an
-    [code]$ vim CommentsModel.class.php[/code]
-    mit dem Inhalt:
-    [code]<?php
-    class Extras_CommentsModel extends ProjectBaseModel implements AgaviISingletonModel {
+Wir legen nun erstmal das CommentServiceModel.class.php an
+
+    $ vim app/models/CommentServiceModel.class.php
+
+mit dem Inhalt:
+
+    <?php
+    class CommentServiceModel {
     
         public function getCommentAsArray($comment) {
             $created_at = strtotime($comment->created_at);
@@ -1377,12 +1414,12 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
                  )
             );
     
-            $users_model = $this->getContext()->getModel('Users', 'User');
+            $user_service = AgaviContext::getInstance()->getModel('UserService');
     
             if ($comment->user_id) {
-                $ret_val['user'] = $users_model->getUser($comment->user_id);
+                $ret_val['user'] = $user_service->getUser($comment->user_id);
             } else {
-                $ret_val['user'] = $users_model->getGuestUser($comment->user_name);
+                $ret_val['user'] = $user_service->getGuestUser($comment->user_name);
             }
     
             return $ret_val;
@@ -1405,14 +1442,17 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
             return $ret_val;
         }
     
-    }[/code]
+    }
     
-    [h2]NewsComment-Datenbankstruktur erzeugen[/h2]
+### NewsComment-Datenbankstruktur erzeugen
     
-    Wie man erkennen kann, werden die Daten dynamisch von einer Doctrine-Datenbanktabelle mit dem Namen $EntityType + 'Comment' geholt. Am Anfang legen wir deswegen in unserer schema.yml
-    [code]$ vim dev/schema/schema.yml[/code]
-    durch hinzufügen dieser Zeilen an:
-    [code]NewsComment:
+Wie man erkennen kann, werden die Daten dynamisch von einer Doctrine-Datenbanktabelle mit dem Namen $EntityType + 'Comment' geholt. Am Anfang legen wir deswegen in unserer schema.yml
+
+    $ vim dev/schema/schema.yml
+
+durch hinzufügen dieser Zeilen an:
+
+    NewsComment:
       tableName: news_comments
       columns:
         id:
@@ -1426,16 +1466,19 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
         user_id: integer(8)
         user_name: string(255)
         created_at:
-          type: timestamp[/code]
+          type: timestamp
     
-    [h2]NewsComment-Testdaten erzeugen[/h2]
+### NewsComment-Testdaten erzeugen
     
-    Wie immer wollen wir natürlich Testdaten für die Kommentare haben.
+Wie immer wollen wir natürlich Testdaten für die Kommentare haben.
     
-    Dafür passen wir diesmal die news_items.yml an
-    [code]$ vim dev/fixtures/news_items.yml[/code]
-    und fügen folgendes ganz ans Ende an
-    [code]NewsComment:
+Dafür passen wir diesmal die news_items.yml an
+
+    $ vim dev/fixtures/news_items.yml
+
+und fügen folgendes ganz ans Ende an
+
+    NewsComment:
       FirstComment:
         entity_id: 1
         body: This is my very first post
@@ -1446,35 +1489,39 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
         entity_id: 1
         body: Second Comment!
         user_name: 'Koala'
-        created_at: '2010-02-12 15:05'[/code]
+        created_at: '2010-02-12 15:05'
     
-    [h2]Datenbank aktualisieren[/h2]
+### Datenbank aktualisieren
     
-    Nun müssen wir erstmal die Datenbank aktualisieren, damit wir gleich auch die Daten sehen können.
-    [code]$ ./doctrine generate-models-yaml
+Nun müssen wir erstmal die Datenbank aktualisieren, damit wir gleich auch die Daten sehen können.
+
+    $ ./doctrine generate-models-yaml
     generate-models-yaml - Generated models successfully from YAML schema
     $ ./doctrine create-tables
     create-tables - Created tables successfully
     $ ./doctrine load-data
-    load-data - Data was successfully loaded[/code]
+    load-data - Data was successfully loaded
     
-    [h2]Die Kommentare abholen[/h2]
+### Die Kommentare abholen
     
-    Die ViewNewsItem-Action muss erweitert werden.
-    [code]$ vim app/modules/News/impl/ViewNewsItem/ViewNewsItemAction.class.php[/code]
-    Sie enthält dann folgenden Inhalt:
-    [code]<?php
+Die ViewNewsItem-Action muss erweitert werden.
+
+    $ vim app/modules/News/impl/ViewNewsItem/ViewNewsItemAction.class.php
+
+Sie enthält dann folgenden Inhalt:
+
+    <?php
     class News_ViewNewsItemAction extends ProjectBaseAction {
     
         function execute(AgaviRequestDataHolder $rd) {
-            $news_model = $this->getContext()->getModel('News', 'News');
+            $news_service = $this->getContext()->getModel('NewsService');
             try {
-                [strong]$news_item = $news_model->getNewsItem($rd->getParameter('news_item'));
-                $this->setAttribute('news_item', $news_item);[/strong]
+                $news_item = $news_service->getNewsItem($rd->getParameter('news_item'));
+                $this->setAttribute('news_item', $news_item);
     
-                $comments_model = $this->getContext()->getModel('Comments', 'Extras');
+                $comment_service = $this->getContext()->getModel('CommentService');
     
-                [strong]$this->setAttribute('comments', $comments_model->getComments('News', $news_item['id'], 0, 10));[/strong]
+                $this->setAttribute('comments', $comment_service->getComments('News', $news_item['id'], 0, 10));
             } catch (Exception $e) {
                return array('Default', 'Error404Success');
             }
@@ -1482,18 +1529,21 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
             return "Success";
         }
     
-    }[/code]
+    }
     
-    Danach muss auch noch das Template unter ViewNewsItemSuccess.php
-    [code]$ vim app/modules/News/impl/ViewNewsItem/ViewNewsItemSuccess.php[/code]
-    wie folgt erweitert werden
-    [code]<?php
+Danach muss auch noch das Template unter ViewNewsItemSuccess.php
+
+    $ vim app/modules/News/impl/ViewNewsItem/ViewNewsItemSuccess.php
+
+wie folgt erweitert werden
+
+    <?php
         $news_item = $t['news_item'];
-    [strong]    $comments = $t['comments'];[/strong]
+        $comments = $t['comments'];
     ?>
     <h1><?php echo htmlspecialchars($news_item['title']); ?></h1>
     <div><?php echo htmlspecialchars($news_item['body']); ?></div>
-    [strong]<h2>Kommentare</h2>
+    <h2>Kommentare</h2>
     <ul>
     <?php
         foreach ($comments as $comment) {
@@ -1502,17 +1552,20 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
     <?php
         }
     ?>
-    </ul>[/strong][/code]
+    </ul>
     
     
-    [h1]Neue Kommentare erzeugen[/h1]
+## Neue Kommentare erzeugen
     
-    [h2]Eine Form dem ViewNewsItem-Template hinzufügen[/h2]
+### Eine Form dem ViewNewsItem-Template hinzufügen
     
-    Wir öffnen die ViewNewsItemSuccess
-    [code]$ vim app/modules/News/impl/ViewNewsItem/ViewNewsItemSuccess.php[/code]
-    und erweitern den Code so:
-    [code]<?php
+Wir öffnen die ViewNewsItemSuccess
+
+    $ vim app/modules/News/impl/ViewNewsItem/ViewNewsItemSuccess.php
+
+und erweitern den Code so:
+
+    <?php
         $news_item = $t['news_item'];
         $comments = $t['comments'];
     ?>
@@ -1540,34 +1593,41 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
     <?php
         }
     ?>
-    </ul>[/code]
+    </ul>
     
-    Nun generieren wir die Route noch richtig. Dafür müssen wir sie erstmal in der routing.xml registrieren:
-    [code]$ vim app/config/routing.xml[/code]
-    und ergänzen den route-Bereich für news wie folgt:
-    [code]            <route name="news" pattern="^/news/" module="News">
-                    [strong]<route name=".post_comment" pattern="^post-comment/$" action="PostNewsComment" />[/strong]
+Nun generieren wir die Route noch richtig. Dafür müssen wir sie erstmal in der routing.xml registrieren:
+
+    $ vim app/config/routing.xml
+
+und ergänzen den route-Bereich für news wie folgt:
+
+                <route name="news" pattern="^/news/" module="News">
+                    <route name=".post_comment" pattern="^post-comment/$" action="PostNewsComment" />
                     <route name=".list" pattern="^$" action="ListNews" />
                     <route name=".item" pattern="^view/(news_item:\d+)/$" action="ViewNewsItem" />
-                </route>[/code]
-    vor dem letzen </routes> an.
+                </route>
+
+vor dem letzen </routes> an.
     
-    Generieren tun wir die variable post_comment_url dann in der ViewNewsItemAction
-    [code]$ vim app/modules/News/impl/ViewNewsItem/ViewNewsItemAction.class.php[/code]
-    in dem wir folgendes anfügen:
-    [code]<?php
+Generieren tun wir die variable post_comment_url dann in der ViewNewsItemAction
+
+    $ vim app/modules/News/impl/ViewNewsItem/ViewNewsItemAction.class.php
+
+in dem wir folgendes anfügen:
+
+    <?php
     class News_ViewNewsItemAction extends ProjectBaseAction {
     
         function execute(AgaviRequestDataHolder $rd) {
-            $news_model = $this->getContext()->getModel('News', 'News');
+            $news_service = $this->getContext()->getModel('NewsService');
             try {
-                $news_item = $news_model->getNewsItem($rd->getParameter('news_item'));
+                $news_item = $news_service->getNewsItem($rd->getParameter('news_item'));
                 $this->setAttribute('news_item', $news_item);
     
-                $comments_model = $this->getContext()->getModel('Comments', 'Extras');
+                $comment_service = $this->getContext()->getModel('CommentService');
     
-                $this->setAttribute('comments', $comments_model->getComments('News', $news_item['id'], 0, 10));
-                [strong]$this->setAttribute('post_comment_url', $this->getContext()->getRouting()->gen('news.post_comment'));[/strong]
+                $this->setAttribute('comments', $comment_service->getComments('News', $news_item['id'], 0, 10));
+                $this->setAttribute('post_comment_url', $this->getContext()->getRouting()->gen('news.post_comment'));
             } catch (Exception $e) {
                return array('Default', 'Error404Success');
             }
@@ -1576,28 +1636,30 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
         }
     
     }
-    [/code]
     
-    [h2]PostNewsComment-Action implementieren[/h2]
+### PostNewsComment-Action implementieren
     
-    In der routing.xml haben wir die PostNewsComment-Action bereits versprochen. Implementiert ist sie noch nicht, also machen wir das jetzt!
-    [code]$ mkdir app/modules/News/impl/PostNewsComment
-    $ vim app/modules/News/impl/PostNewsComment/PostNewsCommentAction.class.php[/code]
-    mit folgendem Inhalt:
-    [code]<?php
+In der routing.xml haben wir die PostNewsComment-Action bereits versprochen. Implementiert ist sie noch nicht, also machen wir das jetzt!
+
+    $ mkdir app/modules/News/impl/PostNewsComment
+    $ vim app/modules/News/impl/PostNewsComment/PostNewsCommentAction.class.php
+
+mit folgendem Inhalt:
+
+    <?php
     class News_PostNewsCommentAction extends ProjectBaseAction {
     
         function executeWrite(AgaviRequestDataHolder $rd) {
-            $news_model = $this->getContext()->getModel('News', 'News');
+            $news_service = $this->getContext()->getModel('NewsService');
     
             $news_item = null;
             try {
-                $news_item = $news_model->getNewsItem($rd->getParameter('news_item'));
+                $news_item = $news_service->getNewsItem($rd->getParameter('news_item'));
             } catch (Exception $e) {
                 return "Error";
             }
     
-            $comments_model = $this->getContext()->getModel('Comments', 'Extras');
+            $comment_service = $this->getContext()->getModel('CommentService');
     
             $session = $this->getContext()->getUser();
             $user = null;
@@ -1614,7 +1676,7 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
             }
     
             try {
-                $comments_model->postCommentAsUser(array(
+                $comment_service->postCommentAsUser(array(
                     'body' => $rd->getParameter('body'),
                     'user' => $user,
                     'entity' => array(
@@ -1628,12 +1690,15 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
             return "Success";
         }
     
-    }[/code]
+    }
     
-    Weil in Agavi alles validiert wird, brauchen wir auch noch eine PostNewsComment.validate.xml:
-    [code]$ vim app/modules/News/impl/PostNewsComment/PostNewsComment.validate.xml[/code]
-    mit dem Inhalt:
-    [code]<?xml version="1.0" encoding="UTF-8"?>
+Weil in Agavi alles validiert wird, brauchen wir auch noch eine PostNewsComment.validate.xml:
+
+    $ vim app/modules/News/impl/PostNewsComment/PostNewsComment.validate.xml
+
+mit dem Inhalt:
+
+    <?xml version="1.0" encoding="UTF-8"?>
     <ae:configurations xmlns="http://agavi.org/agavi/config/parts/validators/1.0" xmlns:ae="http://agavi.org/agavi/config/global/envelope/1.0" parent="%core.config_dir%/validators.xml" >
         <ae:configuration>
             <validators>
@@ -1645,78 +1710,82 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
                 </validator>
             </validators>
         </ae:configuration>
-    </ae:configurations>[/code]
+    </ae:configurations>
     
-    [h2]CommentsModel um postCommentAsUser erweitern[/h2]
+### CommentsModel um postCommentAsUser erweitern
     
-    Füge neue Funktion hinzu:
-    [code]    public function postCommentAsUser($options) {
-            $body = $options['body'];
-            $entity = $options['entity'];
-            $user = $options['user'];
+Füge neue Funktion hinzu:
+
+    public function postCommentAsUser($options) {
+        $body = $options['body'];
+        $entity = $options['entity'];
+        $user = $options['user'];
+
+        $comment_class = $entity['type'] . 'Comment';
+        $comment = new $comment_class();
+
+        $comment->entity_id = $entity['id'];
+        $comment->body = $body;
+        $comment->user_name = $user['name'];
+        $comment->created_at = date('Y-m-d H:i:s', time());
+
+        if (isset($user['id'])) {
+            $comment->user_id = $user['id'];
+        }
+
+        $comment->save();
+    }
+
+### Helfermethode für das Erstellen eines Kommentars
+
+Wir haben bis jetzt noch recht viel Logik in der PostNewsCommentAction, um rauszufinden, ob der User eingeloggt ist und das Array für die postComment Funktion zusammen zu bauen.
     
-            $comment_class = $entity['type'] . 'Comment';
-            $comment = new $comment_class();
+Deswegen erweitern wir das CommentServiceModel um folgende Methode:
+
+    public function postComment($entity_type, $entity_id, $body) {
+        $session = AgaviContext::getInstance()->getUser();
+        $user = null;
+
+        if ($session->isAuthenticated()) {
+            $user = array(
+                'name' => $session->getAttribute('name'),
+                'id' => $session->getAttribute('id')
+            );
+        } else {
+            $user = array(
+                'name' => 'Gast'
+            );
+        }
+
+        $this->postCommentAsUser(array(
+            'body' => $body,
+            'user' => $user,
+            'entity' => array(
+                'id' => $entity_id,
+                'type' => $entity_type,
+            )
+        ));
+    }
     
-            $comment->entity_id = $entity['id'];
-            $comment->body = $body;
-            $comment->user_name = $user['name'];
-            $comment->created_at = date('Y-m-d H:i:s', time());
-    
-            if (isset($user['id'])) {
-                $comment->user_id = $user['id'];
-            }
-    
-            $comment->save();
-    
-        }[/code]
-    [h2]Helfermethode für das Erstellen eines Kommentars[/h2]
-    Wir haben bis jetzt noch recht viel Logik in der PostNewsCommentAction, um rauszufinden, ob der User eingeloggt ist und das Array für die postComment Funktion zusammen zu bauen.
-    
-    Deswegen erweitern wir das CommentsModel um folgende Methode:
-    [code]    public function postComment($entity_type, $entity_id, $body) {
-            $session = $this->getContext()->getUser();
-            $user = null;
-    
-            if ($session->isAuthenticated()) {
-                $user = array(
-                    'name' => $session->getAttribute('name'),
-                    'id' => $session->getAttribute('id')
-                );
-            } else {
-                $user = array(
-                    'name' => 'Gast'
-                );
-            }
-    
-            $this->postCommentAsUser(array(
-                'body' => $body,
-                'user' => $user,
-                'entity' => array(
-                    'id' => $entity_id,
-                    'type' => $entity_type,
-                )
-            ));
-        }[/code]
-    
-    Diese benutzen wir dann gleich in der PostNewsCommentAction und verschlankern diese dann auf den folgenden Code:
-    [code]<?php
+Diese benutzen wir dann gleich in der PostNewsCommentAction und verschlankern diese dann auf den folgenden Code:
+
+    <?php
     class News_PostNewsCommentAction extends ProjectBaseAction {
     
         function executeWrite(AgaviRequestDataHolder $rd) {
-            $news_model = $this->getContext()->getModel('News', 'News');
+            $news_service = $this->getContext()->getModel('NewService');
     
             $news_item = null;
             try {
-                $news_item = $news_model->getNewsItem($rd->getParameter('news_item'));
+                $news_item = $news_service->getNewsItem($rd->getParameter('news_item'));
             } catch (Exception $e) {
                 return "Error";
             }
     
-            $comments_model = $this->getContext()->getModel('Comments', 'Extras');
+            $comment_service = $this->getContext()->getModel('CommentService');
     
             try {
-                $comments_model->postComment('News', $news_item['id'], $rd->getParameter('body'));
+                $comment_service->postComment('News', $news_item['id'], $rd->getParameter('body'));
             } catch (Exception $e) {
                 return "Error";
             }
@@ -1724,4 +1793,4 @@ Wenn wir nun eine beliebige Seite unserer Community Seite anschauen, sehen wir o
             return "Success";
         }
     
-    }[/code]
+    }
