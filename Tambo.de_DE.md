@@ -1712,7 +1712,7 @@ mit dem Inhalt:
         </ae:configuration>
     </ae:configurations>
     
-### CommentsModel um postCommentAsUser erweitern
+### CommentService um postCommentAsUser erweitern
     
 Füge neue Funktion hinzu:
 
