@@ -91,12 +91,12 @@ wir antworten mit *Tambo Community Site*. Jetzt gibt es noch ein Projektprefix. 
     [filter:ReplaceTokens] Replaced "%%PROJECT_NAME%%" with "Tambo Community Site"
     [filter:ReplaceTokens] Replaced "%%TEMPLATE_EXTENSION%%" with "php"
          [copy] Copying 2 files to /home/jan/tambo/dev/pub
-     [property] Loading /home/helma/tambo/build.properties
-    [agavi.import] Could not read /home/helma/tambo/build.xml: Error reading project file [wrapped: property (unknown) doesn't support the 'userproperty' attribute.] (skipping)
+     [property] Loading /home/jan/tambo/build.properties
+    [agavi.import] Could not read /home/jan/tambo/build.xml: Error reading project file [wrapped: property (unknown) doesn't support the 'userproperty' attribute.] (skipping)
     
     Agavi > project-locate:
     
-     [property] Loading /home/helma/tambo/build.properties
+     [property] Loading /home/jan/tambo/build.properties
     
     Agavi > public-create:
 
@@ -104,7 +104,7 @@ Nun fragt Agavi nach dem environment-Namen (*development-jan* passt):
 
     Name of the environment to bootstrap in dispatcher scripts [development]: development-jan
 Should an Apache .htaccess file with rewrite rules be generated (y/n) [n]? 
-     [copy] Copying 1 file to /home/helma/tambo/pub
+     [copy] Copying 1 file to /home/jan/tambo/pub
      
 Nun kommen sehr viele Fragen. Drücke jedes mal Enter. Wir werden immer den Default-Fall nehmen.
 
